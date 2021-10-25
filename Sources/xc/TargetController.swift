@@ -25,9 +25,10 @@ final class TargetController {
   let cwd: String
   let targets: [Target]
 
-  init(arguments: [String], environment: [String: String]) throws {
+  init(arguments: [String],
+       fileManager: FileManager,
+       environment: [String: String]) throws {
     self.arguments = arguments
-
 
     if let pwd = environment["TEST_PWD"] {
       self.cwd = pwd.expandingTildeInPath
@@ -39,11 +40,13 @@ final class TargetController {
       throw TargetControllerError.unableToResolveCurrentWorkingDirectory
     }
 
-    self.targets = Self.processPaths(Array(arguments.dropFirst()), cwd: cwd)
+    self.targets = Self.processPaths(Array(arguments.dropFirst()),
+                                     cwd: cwd,
+                                     fileManager: fileManager)
   }
 
-  private static func processPaths(_ paths: [String], cwd: String) -> [Target] {
-    let fileManager = FileManager.default
+  private static func processPaths(_ paths: [String], cwd: String,
+                                   fileManager: FileManager) -> [Target] {
     var targets = [Target]()
     var paths = paths
 
