@@ -1,18 +1,18 @@
 import Foundation
 
-enum Target {
+enum Target: Equatable {
   case absolutePath(url: URL)
   case folder(url: URL)
   case wildcard(url: URL)
   case xed(url: URL)
 
-  var urls: [URL] {
+  var url: URL {
     switch self {
     case .folder(let url),
         .absolutePath(let url),
         .wildcard(let url),
         .xed(let url):
-      return [url]
+      return url
     }
   }
 }
@@ -39,6 +39,8 @@ final class TargetController {
     } else {
       throw TargetControllerError.unableToResolveCurrentWorkingDirectory
     }
+
+    fileManager.changeCurrentDirectoryPath(self.cwd) 
 
     self.targets = Self.processPaths(Array(arguments.dropFirst()),
                                      cwd: cwd,

@@ -13,15 +13,11 @@ final class FolderController {
   ]
 
   private let fileManager: FileManager
-  private let xcode: XcodeController
+  private let xcode: XcodeControlling
 
-  init(fileManager: FileManager = .default, xcode: XcodeController? = nil) {
+  init(fileManager: FileManager = .default, xcode: XcodeControlling) {
     self.fileManager = fileManager
-    if let xcode = xcode {
-      self.xcode = xcode
-    } else {
-      self.xcode = XcodeController(fileManager: fileManager)
-    }
+    self.xcode = xcode
   }
 
   func receive(_ url: URL) async throws {
@@ -51,6 +47,6 @@ final class FolderController {
       throw FolderError.unableToFindMatch(url: url)
     }
 
-    try await xcode.open(using: .workspace(url: match))
+    try await xcode.perform(.workspace(url: match))
   }
 }

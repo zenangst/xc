@@ -1,13 +1,7 @@
 import Cocoa
 import Foundation
 
-final class XcodeController {
-  enum Action {
-    case openCommand(url: URL)
-    case workspace(url: URL)
-    case xed(url: URL)
-  }
-
+final class XcodeController: XcodeControlling {
   private let configuration: NSWorkspace.OpenConfiguration
   private let fileManager: FileManager
   private let workspace: NSWorkspace
@@ -20,7 +14,7 @@ final class XcodeController {
     self.workspace = workspace
   }
 
-  public func open(using action: Action) async throws {
+  public func perform(_ action: XcodeAction) async throws {
     switch action {
     case .openCommand(let url):
       try await openWithOpenCommand(url)

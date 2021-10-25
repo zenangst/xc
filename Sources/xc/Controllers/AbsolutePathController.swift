@@ -1,13 +1,13 @@
 import Foundation
 
 final class AbsolutePathController {
-  let xcode: XcodeController
+  let xcode: XcodeControlling
 
-  init(xcode: XcodeController) {
+  init(xcode: XcodeControlling) {
     self.xcode = xcode
   }
 
   func receive(_ url: URL) async throws {
-    try await xcode.open(using: .workspace(url: url))
+    try await xcode.perform(.workspace(url: url))
   }
 }

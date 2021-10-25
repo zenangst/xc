@@ -4,10 +4,8 @@ final class Plugins {
   private(set) lazy var absolute = AbsolutePathController(xcode: xcode)
   private(set) lazy var folder = FolderController(fileManager: fileManager,
                                                   xcode: xcode)
-  private(set) lazy var wildcard = WildcardController(fileManager: fileManager,
-                                                      xcode: xcode)
-  private(set) lazy var xed = XedController(fileManager: fileManager,
-                                            xcode: xcode)
+  private(set) lazy var wildcard = WildcardController(xcode: xcode)
+  private(set) lazy var xed = XedController(xcode: xcode)
 
   private let fileManager: FileManager
   private let xcode: XcodeController

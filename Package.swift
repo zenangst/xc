@@ -19,6 +19,7 @@ let package = Package(
       swiftSettings: []),
     .testTarget(
       name: "xcTests",
-      dependencies: ["xc"]),
+      dependencies: ["xc"]
+    ),
   ]
 )
