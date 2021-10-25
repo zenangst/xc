@@ -4,80 +4,65 @@ import Cocoa
 let target: Target
 let argumentsWithoutPath = ProcessInfo.processInfo.arguments.dropFirst()
 
-if let argument = argumentsWithoutPath.last {
-  let path = (argument as NSString).expandingTildeInPath
-  target = .provided(url: URL(fileURLWithPath: path))
-} else {
-  guard let pwd = ProcessInfo.processInfo.environment["PWD"] else {
-    throw XCError.unableToFindEnvironmentVariablePWD
+class Plugins {
+  private(set) lazy var absolute = AbsolutePathController(xcode: xcode)
+  private(set) lazy var folder = FolderController(fileManager: fileManager,
+                                                  xcode: xcode)
+  private(set) lazy var wildcard = WildcardController(fileManager: fileManager,
+                                                      xcode: xcode)
+  private(set) lazy var xed = XedController(fileManager: fileManager,
+                                            xcode: xcode)
+
+  private let fileManager: FileManager
+  private let xcode: XcodeController
+
+  init(fileManager: FileManager = .default,
+       xcode: XcodeController? = nil) {
+    self.fileManager = fileManager
+    if let xcode = xcode {
+      self.xcode = xcode
+    } else {
+      self.xcode = XcodeController(fileManager: fileManager)
+    }
   }
-  target = .environment(url: URL(fileURLWithPath: pwd))
 }
 
-let patterns: Set<String> = [
-  "Package.swift",
-  "xcworkspace",
-  "xcodeproj",
-]
+final class App {
+  let plugins = Plugins()
 
-let dispatchGroup = DispatchGroup()
-
-class App {
   init() throws { try main() }
 
   func main() throws {
-    let xcodeUrl = URL(fileURLWithPath: "/Applications/Xcode.app")
-    let configuration = NSWorkspace.OpenConfiguration()
-    let fileManager = FileManager.default
+    let targetController = try TargetController(
+      arguments: ProcessInfo.processInfo.arguments,
+      environment: ProcessInfo.processInfo.environment)
 
-    if !fileManager.fileExists(atPath: xcodeUrl.path) {
-      throw XCError.unableToFindXcode
+    Task.init(priority: .high) {
+      do {
+        try await receive(targetController.targets)
+      } catch let error {
+          Swift.print(error)
+      }
+      exit(EXIT_SUCCESS)
     }
+  }
 
-    if fileManager.fileExists(atPath: target.url.path),
-       (try? target.url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == false {
-      dispatchGroup.enter()
-      NSWorkspace.shared.open([target.url], withApplicationAt: xcodeUrl,
-                              configuration: configuration) { _, _ in
-        dispatchGroup.leave()
-        exit(EXIT_SUCCESS)
+  func receive(_ targets: [Target]) async throws {
+    for target in targets {
+      switch target {
+      case .absolutePath(let url):
+        try await plugins.absolute.receive(url)
+      case .folder(let url):
+        try await plugins.folder.receive(url)
+      case .wildcard(let url):
+        try await plugins.wildcard.receive(url)
+      case .xed(let url):
+        try await plugins.xed.receive(url)
       }
-    } else {
-      let directoryUrl = target.url
-      let contents = fileManager.enumerator(at: directoryUrl.resolvingSymlinksInPath(),
-                                            includingPropertiesForKeys: nil,
-                                            options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants],
-                                            errorHandler: nil)
-
-      var match: URL?
-      while let fileUrl = contents?.nextObject() as? URL {
-        let lastComponent = fileUrl.lastPathComponent
-        let fileExtension = fileUrl.pathExtension
-
-        if patterns.contains(lastComponent) {
-          match = fileUrl
-          break
-        } else if patterns.contains(fileExtension) {
-          match = fileUrl
-          break
-        }
-      }
-
-      guard let match = match else {
-        throw XCError.noMatchFound
-      }
-
-      dispatchGroup.enter()
-      NSWorkspace.shared.open([match], withApplicationAt: xcodeUrl,
-                              configuration: configuration, completionHandler: { _, _ in
-        dispatchGroup.leave()
-        exit(EXIT_SUCCESS)
-      })
     }
-    dispatchMain()
   }
 }
 
 _ = try? App()
-
+dispatchMain()
 

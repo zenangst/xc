@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
   name: "xc",
-  platforms: [.macOS(.v10_15)],
+  platforms: [.macOS(.v12)],
   dependencies: [
     // Dependencies declare other packages that this package depends on.
     // .package(url: /* package url */, from: "1.0.0"),
@@ -16,12 +16,7 @@ let package = Package(
     .executableTarget(
       name: "xc",
       dependencies: [],
-      swiftSettings: [
-        .unsafeFlags([
-          "-Xfrontend",
-          "-enable-experimental-concurrency"
-        ])
-      ]),
+      swiftSettings: []),
     .testTarget(
       name: "xcTests",
       dependencies: ["xc"]),
